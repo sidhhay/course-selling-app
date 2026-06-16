@@ -3,6 +3,8 @@ const adminRouter=Router();
 const {adminModel}=require("../db");
 const z=require("zod");
 const bcrypt=require('bcrypt');
+const jwt=require('jsonwebtoken');
+require("dotenv").config();
 const saltRounds=10;
 adminRouter.post("/signup",async function(req,res){
     const schema=z.object({
@@ -57,8 +59,45 @@ adminRouter.post("/signup",async function(req,res){
         res.status(500).json({message:"Internal server error"});
     }
 });
-adminRouter.post("/signin",function(req,res){
-    
+adminRouter.post("/signin",async function(req,res){
+    const {email,password}=req.body;
+    //validate user
+    try{
+        const user=await adminModel.findOne({email});
+        if(!user) {
+            return res.status(401).json({
+                message:"Invalid credentials"
+            })
+        }
+        const valid=await bcrypt.compare(
+            password,
+            user.password
+        );
+        if(!valid){
+            return res.status(401).json({
+                message:"invalid credentials"
+            })
+        }
+        const token=jwt.sign(
+            {
+                id:user._id,
+                email:user.email
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn:"1h"
+            }
+        );
+        return res.json({
+            message:"signin successful",
+            token
+        })
+    }catch(err){
+        console.log("error");
+        res.status(500).json({
+            message:"Internal server error"
+        })
+    }
 });
 adminRouter.post("/course",(req,res)=>{
 
