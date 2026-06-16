@@ -33,24 +33,29 @@ adminRouter.post("/signup",async function(req,res){
     }
 
     const hashedPassword=await bcrypt.hash(password,saltRounds);
-    const existingAdmin=await adminModel.findone({
-        email:data.email
-    })
-    if(existingAdmin){
-        return res.status(409).json({
-            message:"Admin already exists"
-        })
-    }
-    await adminModel.create({
-        email:data.email,
-        password:hashedPassword,
-        firstname:data.firstname,
-        lastname:data.lastname
+    try{
 
-    });
-    res.json({
-        message:"signup succesfull"
-    })
+        const existingAdmin=await adminModel.findOne({
+            email:data.email
+        })
+        if(existingAdmin){
+            return res.status(409).json({
+                message:"Admin already exists"
+            })
+        }
+        await adminModel.create({
+            email:data.email,
+            password:hashedPassword,
+            firstname:data.firstname,
+            lastname:data.lastname
+    
+        });
+        res.json({
+            message:"signup succesfull"
+        })
+    }catch(err){
+        res.status(500).json({message:"Internal server error"});
+    }
 });
 adminRouter.post("/signin",function(req,res){
     
