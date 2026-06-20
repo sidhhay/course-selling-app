@@ -34,8 +34,8 @@ adminRouter.post("/signup",async function(req,res){
         })
     }
 
-    const hashedPassword=await bcrypt.hash(password,saltRounds);
     try{
+        const hashedPassword=await bcrypt.hash(password,saltRounds);
 
         const existingAdmin=await adminModel.findOne({
             email:data.email
