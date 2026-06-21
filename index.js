@@ -1,5 +1,6 @@
 const express=require("express");
 const app=express();
+app.use(express.json());
 const {courseRouter}=require("./routes/course")
 const {userrouter}=require("./routes/user");
 const {adminRouter}=require("./routes/admin");

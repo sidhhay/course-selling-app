@@ -32,8 +32,8 @@ router.post("/signup",async function (req, res) {
     }
     try {
         const hashedPassword=await bcrypt.hash(password,saltRounds);
-        const existingAdmin=await userModel.findOne({email});
-        if(existingAdmin){
+        const existingUser=await userModel.findOne({email});
+        if(existingUser){
             return res.status(409).json({
                 message:"user already exists"
             })
