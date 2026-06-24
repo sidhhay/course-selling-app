@@ -5,6 +5,8 @@ function adminMidlleware(req,res,token){
     const decoded=jwt.verify(token,process.env.JWT_SECRET);
     if(decoded){
         req.userId=decoded.id;
+        req.email=decoded.email;
+        next();
     }else{
          return res.status(403).json({
             message:"you are not signed in"

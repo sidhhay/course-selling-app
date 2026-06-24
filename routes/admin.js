@@ -1,10 +1,11 @@
 const {Router}=require("express");
 const adminRouter=Router();
-const {adminModel}=require("../db");
+const {adminModel, courseModel}=require("../db");
 const z=require("zod");
 const bcrypt=require('bcrypt');
 const jwt=require('jsonwebtoken');
 require("dotenv").config();
+const {adminMidlleware}=require("../middleware/admin");
 const saltRounds=10;
 adminRouter.post("/signup",async function(req,res){
     const schema=z.object({
@@ -99,8 +100,25 @@ adminRouter.post("/signin",async function(req,res){
         })
     }
 });
-adminRouter.post("/course",(req,res)=>{
+adminRouter.post("/course",adminMiddleware,async(req,res)=>{
+    try{
 
+        const adminId=req.userId;
+        const {title,description,imageUrl,price}=req.body;
+        const course=await courseModel.create({
+            title,description,imageUrl,price,creatorId:adminId
+        })
+        res.json({
+            message:"course created successfully",
+            course_id:course._id
+        })
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({
+            message:"Error creating course",
+            error:err.message
+        });
+    }
 });
 adminRouter.put("/course",(req,res)=>{
 

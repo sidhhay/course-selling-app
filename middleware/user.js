@@ -5,6 +5,7 @@ function userMiddleware(req,res,next){
     const decoded=jwt.verify(token,process.env.JWT_USER_SECRET);
     if(decoded){
         req.userId=decoded.id;
+        next();
     }else{
          return res.status(403).json({
             message:"you are not signed in"
