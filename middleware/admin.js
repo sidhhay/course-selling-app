@@ -1,6 +1,6 @@
 const jwt=require("jsonwebtoken");
 require("dotenv").config();
-function adminMidlleware(req,res,token){
+function adminMidlleware(req,res,next){
     const token=req.headers.authorization;
     const decoded=jwt.verify(token,process.env.JWT_SECRET);
     if(decoded){

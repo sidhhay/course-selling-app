@@ -1,177 +1,189 @@
-const {Router}=require("express");
-const adminRouter=Router();
-const {adminModel, courseModel}=require("../db");
-const z=require("zod");
-const bcrypt=require('bcrypt');
-const jwt=require('jsonwebtoken');
+const { Router } = require("express");
+const adminRouter = Router();
+const { adminModel, courseModel } = require("../db");
+const z = require("zod");
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
-const {adminMidlleware}=require("../middleware/admin");
-const saltRounds=10;
-adminRouter.post("/signup",async function(req,res){
-    const schema=z.object({
-    email:z.string().email(),
-    firstname:z.string(),
-    lastname: z.string()
+const { adminMidlleware } = require("../middleware/admin");
+const saltRounds = 10;
+adminRouter.post("/signup", async function (req, res) {
+    const schema = z.object({
+        email: z.string().email(),
+        firstname: z.string(),
+        lastname: z.string()
     })
-    const email=req.body.email;
-    const firstname=req.body.firstname;
-    const lastname=req.body.lastname
-    const result=schema.safeParse({
-        email:email,
-        firstname:firstname,
-        lastname:lastname
+    const email = req.body.email;
+    const firstname = req.body.firstname;
+    const lastname = req.body.lastname
+    const result = schema.safeParse({
+        email: email,
+        firstname: firstname,
+        lastname: lastname
     })
-    if(!result.success){
+    if (!result.success) {
         return res.status(400).json({
-            message:"Invalid input",
-            errors:result.error.issues
+            message: "Invalid input",
+            errors: result.error.issues
         })
     }
-    const data=result.data;
-    const password=req.body.password;
-    if(!password || password.length<6){
+    const data = result.data;
+    const password = req.body.password;
+    if (!password || password.length < 6) {
         return res.status(400).json({
-            message:"password must be atleast 6 charecters."
+            message: "password must be atleast 6 charecters."
         })
     }
 
-    try{
-        const hashedPassword=await bcrypt.hash(password,saltRounds);
+    try {
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        const existingAdmin=await adminModel.findOne({
-            email:data.email
+        const existingAdmin = await adminModel.findOne({
+            email: data.email
         })
-        if(existingAdmin){
+        if (existingAdmin) {
             return res.status(409).json({
-                message:"Admin already exists"
+                message: "Admin already exists"
             })
         }
         await adminModel.create({
-            email:data.email,
-            password:hashedPassword,
-            firstname:data.firstname,
-            lastname:data.lastname
-    
+            email: data.email,
+            password: hashedPassword,
+            firstname: data.firstname,
+            lastname: data.lastname
+
         });
         res.json({
-            message:"signup succesfull"
+            message: "signup succesfull"
         })
-    }catch(err){
-        res.status(500).json({message:"Internal server error"});
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
     }
 });
-adminRouter.post("/signin",async function(req,res){
-    const {email,password}=req.body;
+adminRouter.post("/signin", async function (req, res) {
+    const { email, password } = req.body;
     //validate user
-    try{
-        const user=await adminModel.findOne({email});
-        if(!user) {
+    try {
+        const user = await adminModel.findOne({ email });
+        if (!user) {
             return res.status(401).json({
-                message:"Invalid credentials"
+                message: "Invalid credentials"
             })
         }
-        const valid=await bcrypt.compare(
+        const valid = await bcrypt.compare(
             password,
             user.password
         );
-        if(!valid){
+        if (!valid) {
             return res.status(401).json({
-                message:"invalid credentials"
+                message: "invalid credentials"
             })
         }
-        const token=jwt.sign(
+        const token = jwt.sign(
             {
-                id:user._id,
-                email:user.email
+                id: user._id,
+                email: user.email
             },
             process.env.JWT_SECRET,
             {
-                expiresIn:"1h"
+                expiresIn: "1h"
             }
         );
         return res.json({
-            message:"signin successful",
+            message: "signin successful",
             token
         })
-    }catch(err){
+    } catch (err) {
         console.log("error");
         res.status(500).json({
-            message:"Internal server error"
+            message: "Internal server error"
         })
     }
 });
-adminRouter.post("/course",adminMiddleware,async(req,res)=>{
-    try{
+adminRouter.post("/course", adminMidlleware, async (req, res) => {
+    try {
 
-        const adminId=req.userId;
-        const {title,description,imageUrl,price}=req.body;
-        const course=await courseModel.create({
-            title,description,imageUrl,price,creatorId:adminId
+        const adminId = req.userId;
+        const courseSchema = z.object({
+            title: z.string(),
+            description: z.string(),
+            imageUrl: z.string(),
+            price: z.number()
+        });
+        const result=courseSchema.safeParse(req.body);
+        if(!result.success){
+            return res.status(400).json({
+                message:"invalid input"
+            })
+        }
+        const { title, description, imageUrl, price } = result.data;
+        const course = await courseModel.create({
+            title, description, imageUrl, price, creatorId: adminId
         })
         res.json({
-            message:"course created successfully",
-            course_id:course._id
+            message: "course created successfully",
+            course_id: course._id
         })
-    }catch(err){
+    } catch (err) {
         console.log(err);
         return res.status(500).json({
-            message:"Error creating course",
-            error:err.message
+            message: "Error creating course",
+            error: err.message
         });
     }
 });
-adminRouter.put("/course/:courseId",adminMidlleware,async (req,res)=>{
-    try{
-        const adminId=req.userId;
-        const courseid=req.params.courseId;
-        const {title,description,imageUrl,price}=req.body;
-        const course=await courseModel.updateOne({
-            _id:courseid,
-            creatorId:adminId
-        },{
-            title:title,
-            description:description,
-            imageUrl:imageUrl,
-            price:price
+adminRouter.put("/course/:courseId", adminMidlleware, async (req, res) => {
+    try {
+        const adminId = req.userId;
+        const courseid = req.params.courseId;
+        const { title, description, imageUrl, price } = req.body;
+        const course = await courseModel.updateOne({
+            _id: courseid,
+            creatorId: adminId
+        }, {
+            title: title,
+            description: description,
+            imageUrl: imageUrl,
+            price: price
         })
         res.json({
-            message:"Course Updated",
-            courseId:course._id
+            message: "Course Updated",
+            courseId: course._id
         })
-    }catch(err){
+    } catch (err) {
         console.log(err);
         return res.status(500).json({
-             message:"Error creating course",
-            error:err.message
+            message: "Error creating course",
+            error: err.message
         })
     }
 });
-adminRouter.get("/course/bulk",adminMidlleware,async (req,res)=>{
-    try{
-        const adminId=req.userId;
-        const course=await courseModel.find({
-            creatorId:adminId
+adminRouter.get("/course/bulk", adminMidlleware, async (req, res) => {
+    try {
+        const adminId = req.userId;
+        const course = await courseModel.find({
+            creatorId: adminId
         })
-        if(course.length===0){
+        if (course.length === 0) {
             return res.json({
-                message:"you dont have any courses"
+                message: "you dont have any courses"
             })
         }
-        else{
+        else {
             return res.json({
-                message:"here are your courses",
+                message: "here are your courses",
                 course
             })
         }
-        }catch(err){
-            console.log(err);
-            return res.status(500).json({
-            message:"Error creating course",
-            error:err.message
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            message: "Error getting courses",
+            error: err.message
         });
-        }
-        
+    }
+
 });
-module.exports={
-    adminRouter:adminRouter
+module.exports = {
+    adminRouter: adminRouter
 }
