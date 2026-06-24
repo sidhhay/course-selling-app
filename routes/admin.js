@@ -124,9 +124,20 @@ adminRouter.put("/course/:courseId",adminMidlleware,async (req,res)=>{
     try{
         const adminId=req.userId;
         const courseid=req.params.courseId;
-        const course=await courseModel.findOne({
-            create
-    })
+        const {title,description,imageUrl,price}=req.body;
+        const course=await courseModel.updateOne({
+            _id:courseid,
+            creatorId:adminId
+        },{
+            title:title,
+            description:description,
+            imageUrl:imageUrl,
+            price:price
+        })
+        res.json({
+            message:"Course Updated",
+            courseId:course._id
+        })
     }catch(err){
         console.log(err);
         return res.status(500).json({
