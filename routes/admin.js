@@ -120,11 +120,46 @@ adminRouter.post("/course",adminMiddleware,async(req,res)=>{
         });
     }
 });
-adminRouter.put("/course",(req,res)=>{
-
+adminRouter.put("/course/:courseId",adminMidlleware,async (req,res)=>{
+    try{
+        const adminId=req.userId;
+        const courseid=req.params.courseId;
+        const course=await courseModel.findOne({
+            create
+    })
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({
+             message:"Error creating course",
+            error:err.message
+        })
+    }
 });
-adminRouter.get("/course/bulk",(req,res)=>{
-
+adminRouter.get("/course/bulk",adminMidlleware,async (req,res)=>{
+    try{
+        const adminId=req.userId;
+        const course=await courseModel.find({
+            creatorId:adminId
+        })
+        if(course.length===0){
+            return res.json({
+                message:"you dont have any courses"
+            })
+        }
+        else{
+            return res.json({
+                message:"here are your courses",
+                course
+            })
+        }
+        }catch(err){
+            console.log(err);
+            return res.status(500).json({
+            message:"Error creating course",
+            error:err.message
+        });
+        }
+        
 });
 module.exports={
     adminRouter:adminRouter
