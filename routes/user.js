@@ -98,7 +98,7 @@ router.post("/signin",async function (req, res) {
         })
     }
 });
-router.post("/purchase",userMiddleware,function(req,res){
+router.post("/purchase",userMiddleware,async function(req,res){
     //currently not payment gateway;
     const userId=req.userId;
     const courseId=req.body.courseId;
@@ -128,8 +128,16 @@ router.get("/preview",async function (req, res) {
 });
 router.get("/purchases",userMiddleware,async function(req,res){
     const userId=req.userId;
-    const courses=await courseModel.find({userId});
-    return res.json({courses});
+    const purchase=await purchaseModel.find({userId});
+    // enrolled=[];
+    // for(const it of purchase){
+    //     const course=await c
+    // }
+    console.log(purchase);
+    const coursesData=await courseModel.find({
+        _id:{$in:purchase.map(x=>x.courseId)}
+    });
+    return res.json({purchase,coursesData});
 });
 module.exports = {
     userrouter: router
