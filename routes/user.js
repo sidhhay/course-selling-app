@@ -102,6 +102,8 @@ router.post("/purchase",userMiddleware,function(req,res){
     //currently not payment gateway;
     const userId=req.userId;
     const courseId=req.body.courseId;
+    // a check if user has purchased
+     
     try{
         await purchaseModel.create({
             userId,
@@ -120,8 +122,14 @@ router.post("/purchase",userMiddleware,function(req,res){
 router.get("/preview",async function (req, res) {
     const course= await courseModel.find({});
     res.json({
-        message: "course preview"
+        message: "course preview",
+        course
     })
+});
+router.get("/purchases",userMiddleware,async function(req,res){
+    const userId=req.userId;
+    const courses=await courseModel.find({userId});
+    return res.json({courses});
 });
 module.exports = {
     userrouter: router
