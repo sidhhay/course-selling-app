@@ -3,7 +3,9 @@ const router = Router()
 const { userModel, adminModel } = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const {z}=require("zod")
+const {z}=require("zod");
+const { userMiddleware } = require("../middleware/user");
+const {purchaseModel,courseModel}=require("../db");
 require("dotenv").config();
 const saltRounds=10;
 router.post("/signup",async function (req, res) {
@@ -96,7 +98,27 @@ router.post("/signin",async function (req, res) {
         })
     }
 });
-router.get("/purchases", function (req, res) {
+router.post("/purchase",userMiddleware,function(req,res){
+    //currently not payment gateway;
+    const userId=req.userId;
+    const courseId=req.body.courseId;
+    try{
+        await purchaseModel.create({
+            userId,
+            courseId
+        });
+        return res.json({
+            message:"you have successfully bought the course"
+        });
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({
+            message:"system error occured"
+        })
+    }
+});
+router.get("/preview",async function (req, res) {
+    const course= await courseModel.find({});
     res.json({
         message: "course preview"
     })
